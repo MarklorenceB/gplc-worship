@@ -15,6 +15,9 @@ import { requireViewer } from "@/lib/auth";
 import { getMyAnswers, getSundaysBetween, listMonths } from "@/lib/data";
 import { LANGUAGE_LABELS, longDate, monthName } from "@/lib/dates";
 import { getToday } from "@/lib/today";
+import { getDb } from "@/lib/db/client";
+import { listAnnouncements } from "@/lib/announcements";
+import { AnnouncementCard } from "@/components/announcements";
 
 export default function HomePage() {
   return (
@@ -31,6 +34,7 @@ async function Home() {
   const mine = upcoming.filter((s) => rolesOf(s, viewer.id).length > 0);
   const next = mine[0];
   const thisSunday = upcoming[0];
+  const [latestAnnouncement] = await listAnnouncements(await getDb(), { limit: 1 });
 
   const openMonths = (await listMonths())
     .filter((m) => m.availabilityOpen)
@@ -51,6 +55,13 @@ async function Home() {
       <PageHeader eyebrow={longDate(today)} title={`Hi, ${viewer.name}.`}>
         <p className="text-[15px] text-muted">A little preparation. A wholehearted Sunday.</p>
       </PageHeader>
+      <section className="mb-6" aria-label="Team announcements">
+        <SectionTitle aside={<Link href="/announcements" className="text-[14px] font-semibold text-primary">View all →</Link>}>From our leaders</SectionTitle>
+        {latestAnnouncement ? <AnnouncementCard announcement={latestAnnouncement} compact />
+          : <Card><p className="text-[14px] text-muted">Team announcements will appear here.</p>
+            {viewer.leader && <Link href="/lead/announcements" className="mt-2 inline-flex min-h-11 items-center font-semibold text-primary">Write an announcement →</Link>}
+          </Card>}
+      </section>
       <div className="home-stats">
         <Link href="/schedule?mine=1" className="home-stat"><strong>{mine.length}</strong><span>Upcoming Sundays<br />on your lineup</span></Link>
         <Link href="/availability" className="home-stat"><strong>{unanswered}</strong><span>Availability answers<br />still to send</span></Link>

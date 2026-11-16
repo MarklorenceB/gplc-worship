@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 import { and, asc, eq, gte, inArray, lt, lte, sql } from "drizzle-orm";
 import * as webpush from "web-push";
 import type { Db } from "../db/client";
-import { assignments, availability, lineupNotificationState, members, months, notificationDeliveries as deliveries,
+import { announcements, assignments, availability, lineupNotificationState, members, months, notificationDeliveries as deliveries,
   notificationEvents as events, notificationRuntime, pushSubscriptions as subscriptions, services,
   type NotificationPayload } from "../db/schema";
 import { shortDate, todayISO } from "../dates";
@@ -32,6 +32,19 @@ async function enqueue(db: QueryDb, event: NewEvent, memberIds: number[] | null,
   if (devices.length) await db.insert(deliveries).values(devices.map(device => ({
     eventId: event.id, subscriptionId: device.id, availableAt,
   }))).onConflictDoNothing();
+}
+
+/** Called in the announcement's transaction: publishing and queuing succeed together. */
+export async function queueAnnouncement(db: QueryDb, announcement: typeof announcements.$inferSelect) {
+  await enqueue(db, {
+    id: `announcement:${announcement.id}`, kind: "announcement", announcementId: announcement.id,
+    createdAt: announcement.createdAt, expiresAt: new Date(announcement.createdAt.getTime() + 86400_000),
+    payload: {
+      title: announcement.title,
+      body: `${announcement.authorName}: ${announcement.body}`.slice(0, 200),
+      url: `/announcements/${announcement.id}`, tag: `announcement-${announcement.id}`,
+    },
+  }, null, announcement.createdAt);
 }
 
 /** Observe durable content, so the scheduler also recovers notifications if an action's after() is interrupted. */
@@ -100,6 +113,12 @@ export async function scheduleReminders(db: Db, now = new Date()) {
 
 async function stillRelevant(db: Db, event: typeof events.$inferSelect, memberId: number, now: Date) {
   if (event.expiresAt <= now) return false;
+  if (event.kind === "announcement") {
+    if (!event.announcementId) return false;
+    const [announcement] = await db.select({ archivedAt: announcements.archivedAt }).from(announcements)
+      .where(eq(announcements.id, event.announcementId));
+    if (!announcement || announcement.archivedAt) return false;
+  }
   if (event.serviceId) {
     const [service] = await db.select().from(services).where(eq(services.id, event.serviceId));
     if (!service || service.status !== "published" || service.date < todayISO(undefined, now)) return false;

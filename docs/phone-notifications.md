@@ -93,3 +93,17 @@ Provider delivery and mobile OS permission behavior still need the real-device c
   in page data or logs. The service worker does not cache authenticated pages or lineups.
 - Keep the VAPID key pair stable. Rotating it requires members to enable notifications again;
   the setup button detects an old browser key and resubscribes.
+
+## Leader announcements
+
+Use **Lead → Announcements** to publish a team message. All members can read it in **Updates**
+and the latest appears on Home. Phone alerts go to active members' subscribed devices at the
+time of publishing. Members who have not enabled notifications can still read every active
+announcement in the app. The database transaction saves the post and its delivery queue
+together; the existing scheduler drains pending alerts if `after()` does not finish.
+
+Test announcements against a separate local database, without real member subscriptions.
+Verify member access to the feed, leader-only publishing/archive controls, live updates,
+double-submit deduplication, and notification deep links. Do not publish QA messages to the
+production team. Archive cancels pending alerts and hides the message from the member feed;
+restoring it does not resend. Phone alerts expire after 24 hours; posts persist until archived.

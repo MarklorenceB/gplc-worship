@@ -7,6 +7,8 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vites
 import type { Db } from "../db/client";
 import * as s from "../db/schema";
 import { deliverPending, observeLineup, runNotificationCycle, scheduleReminders } from "./engine";
+import { announcementError, listAnnouncements, publishAnnouncement, setAnnouncementArchived } from "../announcements";
+import { getLineupRevision } from "../db/revision";
 
 const pg = new PGlite();
 const db = drizzle({ client: pg, schema: s, casing: "snake_case" });
@@ -21,6 +23,93 @@ beforeEach(async () => {
   await db.insert(s.services).values({ date: "2026-11-22", monthId: "2026-11", language: "en" });
   await db.insert(s.pushSubscriptions).values([1, 2, 3, 4].map(memberId => ({ deviceId: `device-${memberId}`, memberId,
     endpoint: `https://fcm.googleapis.com/fcm/send/${memberId}`, ...keys })));
+});
+
+describe("team announcements", () => {
+  const post = { id: "ebff4e71-33e2-468f-947a-92c513f09ad1", authorId: 1, authorName: "Faye", title: "Rehearsal at 4 PM", body: "Please meet at church.\nBring your instruments." };
+
+  it("persists the feed and alerts each active subscribed device once across concurrent retries", async () => {
+    await db.insert(s.pushSubscriptions).values({ deviceId: "second-phone", memberId: 1, endpoint: "https://fcm.googleapis.com/fcm/send/second", ...keys });
+    await db.insert(s.members).values({ name: "No phone" });
+    const before = await getLineupRevision(database);
+    await Promise.all([publishAnnouncement(database, post, now), publishAnnouncement(database, post, now)]);
+    expect(await listAnnouncements(database)).toHaveLength(1);
+    expect((await listAnnouncements(database))[0]).toMatchObject({ title: post.title, body: post.body, authorName: "Faye" });
+    expect(await getLineupRevision(database)).not.toBe(before);
+    expect(await db.select().from(s.notificationEvents)).toHaveLength(1);
+    expect(await db.select().from(s.notificationDeliveries)).toHaveLength(4);
+    const sender = vi.fn().mockResolvedValue(undefined);
+    await deliverPending(database, now, sender);
+    await deliverPending(database, now, sender);
+    expect(sender).toHaveBeenCalledTimes(4);
+    expect(sender.mock.calls[0][1]).toMatchObject({ title: post.title, url: `/announcements/${post.id}`, tag: `announcement-${post.id}` });
+  });
+
+  it("rejects empty/oversized messages and reused IDs with different content without sending again", async () => {
+    expect(announcementError(" ", "Message")).toBeTruthy();
+    expect(announcementError("Title", " ")).toBeTruthy();
+    expect(announcementError("a".repeat(101), "Message")).toBeTruthy();
+    expect(announcementError("Title", "a".repeat(3001))).toBeTruthy();
+    await expect(publishAnnouncement(database, { ...post, body: " " }, now)).rejects.toThrow();
+    expect(await listAnnouncements(database)).toHaveLength(0);
+    await publishAnnouncement(database, post, now);
+    await expect(publishAnnouncement(database, { ...post, body: "Changed" }, now)).rejects.toThrow();
+    expect((await listAnnouncements(database))[0].body).toBe(post.body);
+    expect(await db.select().from(s.notificationEvents)).toHaveLength(1);
+  });
+
+  it("rolls back publishing if the notification outbox cannot be written", async () => {
+    await db.execute(sql`create function pg_temp.reject_announcement_event() returns trigger language plpgsql as $$ begin raise exception 'simulated queue failure'; end; $$`);
+    await db.execute(sql`create trigger reject_announcement_event before insert on notification_events for each row execute function pg_temp.reject_announcement_event()`);
+    try {
+      await expect(publishAnnouncement(database, post, now)).rejects.toThrow();
+      expect(await listAnnouncements(database)).toHaveLength(0);
+      expect(await db.select().from(s.notificationDeliveries)).toHaveLength(0);
+    } finally {
+      await db.execute(sql`drop trigger reject_announcement_event on notification_events`);
+    }
+  });
+
+  it("recovers through the scheduler when the immediate dispatch never runs", async () => {
+    await publishAnnouncement(database, post, now);
+    const sender = vi.fn().mockResolvedValue(undefined);
+    await runNotificationCycle(database, now, sender);
+    expect(sender).toHaveBeenCalledTimes(3);
+    expect(sender.mock.calls.every(call => call[1].url === `/announcements/${post.id}`)).toBe(true);
+  });
+
+  it("archives notices, refreshes other screens, cancels pending alerts and restores without resending", async () => {
+    await publishAnnouncement(database, post, now);
+    const before = await getLineupRevision(database);
+    await setAnnouncementArchived(database, post.id, true, now);
+    expect(await listAnnouncements(database)).toHaveLength(0);
+    expect(await listAnnouncements(database, { archived: true })).toHaveLength(1);
+    expect(await getLineupRevision(database)).not.toBe(before);
+    const sender = vi.fn().mockResolvedValue(undefined);
+    await deliverPending(database, now, sender);
+    await setAnnouncementArchived(database, post.id, false, now);
+    await runNotificationCycle(database, now, sender);
+    expect(sender).not.toHaveBeenCalled();
+    expect(await listAnnouncements(database)).toHaveLength(1);
+  });
+
+  it("keeps announcements readable without subscriptions and does not alert phones added later", async () => {
+    await db.delete(s.pushSubscriptions);
+    await publishAnnouncement(database, post, now);
+    expect(await listAnnouncements(database)).toHaveLength(1);
+    expect(await db.select().from(s.notificationDeliveries)).toHaveLength(0);
+    await db.insert(s.pushSubscriptions).values({ deviceId: "new-phone", memberId: 1, endpoint: "https://fcm.googleapis.com/fcm/send/new", ...keys });
+    await publishAnnouncement(database, post, now);
+    expect(await db.select().from(s.notificationDeliveries)).toHaveLength(0);
+  });
+
+  it("expires phone alerts after a day while keeping the announcement in the feed", async () => {
+    await publishAnnouncement(database, post, now);
+    const sender = vi.fn().mockResolvedValue(undefined);
+    await deliverPending(database, new Date(now.getTime() + 86400_000), sender);
+    expect(sender).not.toHaveBeenCalled();
+    expect(await listAnnouncements(database)).toHaveLength(1);
+  });
 });
 afterAll(async () => { await pg.close(); });
 

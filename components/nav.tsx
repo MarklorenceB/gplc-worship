@@ -3,13 +3,14 @@
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { CalendarIcon, CheckCircleIcon, ClipboardIcon, HomeIcon, UserIcon } from "./icons";
+import { CalendarIcon, CheckCircleIcon, ClipboardIcon, HomeIcon, MegaphoneIcon, UserIcon } from "./icons";
 import { cx } from "./ui";
 
 const memberTabs = [
   { href: "/", label: "Home", Icon: HomeIcon },
   { href: "/schedule", label: "Schedule", Icon: CalendarIcon },
   { href: "/availability", label: "Availability", Icon: CheckCircleIcon },
+  { href: "/announcements", label: "Updates", Icon: MegaphoneIcon },
 ];
 const leaderTab = { href: "/lead", label: "Lead", Icon: ClipboardIcon };
 const meTab = { href: "/me", label: "Me", Icon: UserIcon };

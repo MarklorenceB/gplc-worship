@@ -87,9 +87,10 @@ export function NotificationSettings({ publicKey, timeZone }: { publicKey: strin
         <SectionTitle>Phone notifications</SectionTitle></div>
       <Chip tone={state === "on" ? "ok" : "neutral"}>{state === "on" ? "On for this phone" : "Set up this phone"}</Chip>
     </div>
-    <p className="max-w-2xl text-[15px] text-muted">Get the latest lineup and a reminder when you&apos;re serving, even when the app is closed.</p>
-    <ul className="my-4 grid gap-2 text-[14px] sm:grid-cols-3">
+    <p className="max-w-2xl text-[15px] text-muted">Get team announcements, lineup updates, and serving reminders, even when the app is closed.</p>
+    <ul className="my-4 grid gap-2 text-[14px] sm:grid-cols-2">
       <li className="rounded-2xl bg-ground p-3"><strong className="block">Lineup alerts</strong>Newly published lineups and saved changes.</li>
+      <li className="rounded-2xl bg-ground p-3"><strong className="block">Team announcements</strong>New messages published by your leaders.</li>
       <li className="rounded-2xl bg-ground p-3"><strong className="block">Saturday · 6 PM</strong>A reminder if you&apos;re serving on Sunday.</li>
       <li className="rounded-2xl bg-ground p-3"><strong className="block">Wednesday · 6 PM</strong>A nudge if your availability is unfinished.</li>
     </ul>

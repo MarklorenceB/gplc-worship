@@ -42,6 +42,7 @@ async function NotificationOverview() {
       </Card>
       <Card className="grid-full"><SectionTitle>What the team will receive</SectionTitle>
         <ul className="space-y-3 text-[15px]">
+          <li><strong>Leader announcements:</strong> all active members with notifications enabled. Everyone can also read them in Updates.</li>
           <li><strong>Published lineup:</strong> all active members with notifications enabled. Draft edits stay quiet.</li>
           <li><strong>Published lineup changes:</strong> all subscribed members. An updated alert replaces the earlier notification for that Sunday.</li>
           <li><strong>Saturday, 6 PM:</strong> members assigned to the next day&apos;s published lineup.</li>

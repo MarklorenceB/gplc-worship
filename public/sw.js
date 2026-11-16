@@ -4,7 +4,7 @@ self.addEventListener("activate", event => event.waitUntil(self.clients.claim())
 self.addEventListener("push", event => {
   let message = {};
   try { message = event.data?.json() || {}; } catch { /* Show a safe fallback for malformed pushes. */ }
-  const url = typeof message.url === "string" && /^\/(sunday\/\d{4}-\d{2}-\d{2}|availability(?:\?month=\d{4}-\d{2})?|me)$/.test(message.url) ? message.url : "/schedule";
+  const url = typeof message.url === "string" && /^\/(sunday\/\d{4}-\d{2}-\d{2}|availability(?:\?month=\d{4}-\d{2})?|announcements(?:\/[0-9a-f-]{36})?|me)$/.test(message.url) ? message.url : "/schedule";
   event.waitUntil(self.registration.showNotification(message.title || "GPLC Worship", {
     body: message.body || "There's an update for the team. Tap to view the lineup.",
     icon: "/icons/icon-192.png", badge: "/icons/badge-96.png",

@@ -123,11 +123,22 @@ export const lineupNotificationState = pgTable("lineup_notification_state", {
   version: integer().notNull().default(0),
 });
 
+export const announcements = pgTable("announcements", {
+  id: text().primaryKey(),
+  authorId: integer().references(() => members.id, { onDelete: "set null" }),
+  authorName: text().notNull(),
+  title: text().notNull(),
+  body: text().notNull(),
+  createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+  archivedAt: timestamp({ withTimezone: true }),
+}, (t) => [index("announcements_feed_idx").on(t.archivedAt, t.createdAt)]);
+
 export type NotificationPayload = { title: string; body: string; url: string; tag: string };
 export const notificationEvents = pgTable("notification_events", {
   id: text().primaryKey(),
-  kind: text().$type<"published" | "updated" | "sunday" | "availability">().notNull(),
+  kind: text().$type<"published" | "updated" | "sunday" | "availability" | "announcement">().notNull(),
   serviceId: integer().references(() => services.id, { onDelete: "cascade" }),
+  announcementId: text().references(() => announcements.id, { onDelete: "cascade" }),
   payload: jsonb().$type<NotificationPayload>().notNull(),
   createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
   expiresAt: timestamp({ withTimezone: true }).notNull(),

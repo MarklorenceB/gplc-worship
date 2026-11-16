@@ -69,7 +69,8 @@ async function Lead({ searchParams }: { searchParams: PageProps<"/lead">["search
   return (
     <>
       <PageHeader eyebrow="Leader tools" title="Lineups">
-        <div className="mt-3 flex gap-2">
+        <div className="mt-3 flex flex-wrap gap-2">
+          <Link href="/lead/announcements" className={buttonClass("primary")}>Announcements</Link>
           <Link href="/lead/team" className={buttonClass("secondary")}>
             Team roster
           </Link>

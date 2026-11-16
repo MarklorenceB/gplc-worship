@@ -86,6 +86,14 @@ option to open it. Use **View year** in Lead or **Jump to month** in Schedule to
 
 ## Phone notifications and reminders
 
+Leaders can post a title and message from **Lead → Announcements → Publish announcement**.
+Every signed-in member can read it on **Home** and in **Updates**. Active members with
+notifications enabled receive a phone alert linking to the full message. The message and
+notification queue commit together; duplicate submissions do not send a second announcement.
+Pending phone alerts expire after 24 hours, while the message stays in the feed. The scheduler
+retries delivery if immediate dispatch is interrupted. Leaders can archive outdated notices;
+restoring them to the feed does not send another alert. Already delivered alerts cannot be recalled.
+
 All active members can enable Web Push from **Me → Phone notifications**. On iPhone
 (iOS 16.4+), first add the HTTPS app to the Home Screen and open it from that icon.
 On Android, open the HTTPS app in a current supported browser. Tap **Enable notifications**,

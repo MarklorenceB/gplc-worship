@@ -111,9 +111,9 @@ export function LiveUpdates({ initialRevision }: { initialRevision: string }) {
     <p className={`live-status live-status-${status}`} role="status" aria-live="polite">
       <span aria-hidden="true" />
       {status === "waiting" ? "Updates are waiting while you edit. Save or leave this page to see them."
-        : status === "reconnecting" ? "Reconnecting for lineup updates…"
-        : status === "updated" ? "Updating the lineup…"
-        : "Automatic lineup updates are on"}
+        : status === "reconnecting" ? "Reconnecting for team updates…"
+        : status === "updated" ? "Updating team information…"
+        : "Automatic team updates are on"}
     </p>
   );
 }

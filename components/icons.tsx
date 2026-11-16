@@ -57,6 +57,12 @@ export const UserIcon = (p: IconProps) => (
   </Icon>
 );
 
+export const MegaphoneIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="M4 9h5l10-5v16L9 15H4zM9 15l2 6H7l-2-6M22 9v6" />
+  </Icon>
+);
+
 export const ChevronLeftIcon = (p: IconProps) => (
   <Icon {...p}>
     <path d="m15 18-6-6 6-6" />

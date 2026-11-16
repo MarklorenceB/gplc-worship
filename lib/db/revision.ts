@@ -11,7 +11,8 @@ export async function getLineupRevision(db: Db): Promise<string> {
       'assignments', (select jsonb_agg(to_jsonb(a) order by a.id) from assignments a),
       'members', (select jsonb_agg(to_jsonb(m) order by m.id) from members m),
       'availability', (select jsonb_agg(to_jsonb(a) order by a.member_id, a.service_id) from availability a),
-      'notes', (select jsonb_agg(to_jsonb(n) order by n.member_id, n.month_id) from availability_notes n)
+      'notes', (select jsonb_agg(to_jsonb(n) order by n.member_id, n.month_id) from availability_notes n),
+      'announcements', (select jsonb_agg(to_jsonb(a) order by a.id) from announcements a)
     )::text)`,
   }).from(sql`(values (1)) as snapshot(value)`);
   return row.revision;
