@@ -3,8 +3,6 @@
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useRef } from "react";
-import { trackNavigationViewport } from "@/lib/navigation-viewport";
 import { CalendarIcon, CheckCircleIcon, ClipboardIcon, HomeIcon, MegaphoneIcon, UserIcon } from "./icons";
 import { cx } from "./ui";
 
@@ -41,10 +39,6 @@ export function NavFallback() {
 }
 
 function NavBar({ leader, name, pathname }: { leader: boolean; name: string; pathname: string }) {
-  const sidebar = useRef<HTMLElement>(null);
-  useEffect(() => {
-    if (sidebar.current) return trackNavigationViewport(sidebar.current);
-  }, []);
   const tabs = [...memberTabs, ...(leader ? [leaderTab] : []), meTab];
   return (
     <>
@@ -54,7 +48,7 @@ function NavBar({ leader, name, pathname }: { leader: boolean; name: string; pat
           {name ? name.charAt(0) : <UserIcon size={18} />}
         </Link>
       </header>
-      <aside ref={sidebar} className="app-sidebar">
+      <aside className="app-sidebar">
         <div className="app-sidebar-brand"><Brand /></div>
         <p className="app-nav-label">YOUR TEAM SPACE</p>
         <nav aria-label="Main">

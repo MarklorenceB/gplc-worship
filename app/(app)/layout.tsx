@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 import { Nav, NavFallback } from "@/components/nav";
+import { AppMain } from "@/components/app-main";
 import { LiveUpdates } from "@/components/live-updates";
 import { getDb } from "@/lib/db/client";
 import { getLineupRevision } from "@/lib/db/revision";
@@ -11,11 +12,11 @@ export default function AppLayout({ children }: LayoutProps<"/">) {
     <div className="app-workspace">
       <a href="#main-content" className="app-skip-link">Skip to content</a>
       <Suspense fallback={<NavFallback />}><ViewerNav /></Suspense>
-      <main id="main-content" className="app-main" tabIndex={-1}>
+      <AppMain>
         <div className="app-content">{children}</div>
         <Suspense fallback={null}><LiveLineupUpdates /></Suspense>
         <footer className="app-footer">Green Pasture Life Church <span>·</span> Made for our team. For His glory.</footer>
-      </main>
+      </AppMain>
     </div>
   );
 }
