@@ -146,9 +146,12 @@
 @media (max-width: 1023px) {
   html.app-scroll-contained, html.app-scroll-contained body {
     height: 100%;
-    overflow: hidden;
+    /* Unlike hidden, clip also prevents focus/scrollIntoView from scrolling
+       the outer page and pulling the navigation away from the screen edge. */
+    overflow: clip;
     overscroll-behavior: none;
   }
+  html.app-scroll-contained body { position: relative; }
   /* Keep navigation in a separate grid row: iOS rubber-band scrolling and
      stale visualViewport offsets must never reposition the tab bar. */
   .app-workspace {
