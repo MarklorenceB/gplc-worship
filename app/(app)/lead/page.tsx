@@ -10,6 +10,7 @@ import {
   Chip,
   inputClass,
   labelClass,
+  Notice,
   PageHeader,
   PageSkeleton,
   SectionTitle,
@@ -21,6 +22,7 @@ import {
   monthLabel,
   monthName,
   monthOf,
+  longDate,
   nextMonthId,
   shortDate,
 } from "@/lib/dates";
@@ -28,6 +30,8 @@ import { getToday } from "@/lib/today";
 import { lineupChecklist } from "@/lib/lineup";
 import { YearPlanner } from "./year-planner";
 import { createMonth, setAvailabilityOpen, updateMonth } from "./actions";
+import { DeleteLineup } from "./delete-lineup";
+import { validLineupDate, validLineupMonth } from "@/lib/db/delete-lineups";
 
 export const metadata: Metadata = { title: "Lead" };
 
@@ -45,6 +49,9 @@ async function Lead({ searchParams }: { searchParams: PageProps<"/lead">["search
   const all = await listMonths();
   const lastMonth = all.at(-1);
   const params = await searchParams;
+  const deleted = typeof params.deleted === "string" ? params.deleted : "";
+  const deletedLabel = validLineupDate(deleted) ? `${longDate(deleted)}, ${deleted.slice(0, 4)}`
+    : validLineupMonth(deleted) ? monthLabel(deleted) : null;
   const currentYear = today.slice(0, 4);
   const years = [...new Set([currentYear, ...all.map((m) => m.id.slice(0, 4))])].sort();
   const requestedYear = typeof params.year === "string" ? params.year : undefined;
@@ -78,6 +85,7 @@ async function Lead({ searchParams }: { searchParams: PageProps<"/lead">["search
         </div>
       </PageHeader>
 
+      {deletedLabel && <div role="status" className="mb-6"><Notice tone="ok">{deletedLabel} was deleted.</Notice></div>}
       <YearPlanner defaultYear={Number(currentYear) + 1} defaultLanguage={firstYearLanguage} />
       <form action="/lead" method="get" className="mb-6 max-w-xs">
         <label htmlFor="view-year" className={labelClass}>View year</label>
@@ -158,6 +166,7 @@ async function Lead({ searchParams }: { searchParams: PageProps<"/lead">["search
                 );
               })}
             </ul>
+            {!sundays.length && <p className="mt-4 text-[14px] text-muted">No Sunday lineups in this month.</p>}
 
             <details className="mt-2">
               <summary className="flex min-h-11 cursor-pointer items-center text-[15px] font-bold text-primary">
@@ -194,6 +203,7 @@ async function Lead({ searchParams }: { searchParams: PageProps<"/lead">["search
                 </SubmitButton>
               </form>
             </details>
+            <DeleteLineup scope="month" target={month.id} label={monthLabel(month.id)} serviceIds={sundays.map(s => s.id)} />
           </Card>
         ))}
 

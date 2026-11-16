@@ -28,6 +28,7 @@ import {
   type Role,
 } from "@/lib/lineup";
 import { reviewSunday } from "@/lib/review";
+import { DeleteLineup } from "../../delete-lineup";
 import {
   addPerson,
   addSong,
@@ -115,6 +116,11 @@ async function Builder({ params }: { params: PageProps<"/lead/sunday/[date]">["p
         <DetailsCard sunday={sunday} />
         <PublishCard sunday={sunday} review={review} />
       </div>
+      <Card className="mt-6">
+        <SectionTitle>Remove this lineup</SectionTitle>
+        <p className="text-[14px] text-muted">Delete an old or unused Sunday from the team&apos;s schedule.</p>
+        <DeleteLineup scope="sunday" target={sunday.date} serviceId={sunday.id} label={`${longDate(sunday.date)}, ${sunday.date.slice(0, 4)}`} />
+      </Card>
     </>
   );
 }

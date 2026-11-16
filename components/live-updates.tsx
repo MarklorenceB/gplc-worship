@@ -33,7 +33,9 @@ export function LiveUpdates({ initialRevision }: { initialRevision: string }) {
     let failures = 0;
 
     function markDirty(event: Event) {
-      if (event.target instanceof HTMLElement && event.target.closest("form")) dirty.current = true;
+      const form = event.target instanceof HTMLElement ? event.target.closest("form") : null;
+      // A deletion checkbox has no draft to preserve after Cancel.
+      if (form && !form.hasAttribute("data-no-draft")) dirty.current = true;
     }
 
     async function check() {
